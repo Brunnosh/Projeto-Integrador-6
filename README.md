@@ -1,7 +1,8 @@
 # Projeto Integrador 6 — *Nome a definir*
 
-## 📌 Descrição
-Este projeto consiste na criação de um **jogo 2D simples** em JAVA, integrando conceitos de **programação paralela** e **redes de computadores** para oferecer uma experiência **eficiente** e **multijogador**.  
+> Jogo 2D estilo sandbox (Terraria-like) em **Java**, com **multiplayer autoritativo** e **sistema próprio de gerenciamento de threads**.
+>
+> **Objetivo**: criar um jogo 2D simples integrando conceitos de **programação paralela** e **redes de computadores**, visando **eficiência**, **baixa latência** e **jogabilidade fluida**.
 
 ---
 
@@ -14,35 +15,50 @@ Este projeto consiste na criação de um **jogo 2D simples** em JAVA, integrando
 
 ---
 
-## 🕹️ Funcionalidades Principais *(a definir)*
-- [ ] Sistema de conexão multiplayer  
-- [ ] Mecânica principal do jogo (ex.: corrida, combate, puzzle)  
-- [ ] Gerenciamento eficiente de recursos com programação paralela  
-- [ ] Interface gráfica responsiva  
-- [ ] Sincronização de estado entre jogadores via rede  
+## 📝 Descrição (Resumo do Projeto)
+Este projeto consiste na criação de um **jogo 2D em tiles**, com mundo particionado em **chunks**, **servidor autoritativo**, replicação de estado por **interesse** (apenas dados relevantes por jogador) e um **sistema próprio de threads** para rede, IO e geração/salvamento de chunks.  
+A renderização utiliza **LibGDX (desktop/LWJGL3)**. A comunicação, **Netty (NIO)**. Serialização binária com **Kryo**.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas *(a definir)*
-- Linguagem:  
-- Engine/Biblioteca gráfica:  
-- Frameworks de rede:  
-- Outros:  
+## 🕹️ Funcionalidades Principais *(a definir)*
+
+- [ ] Mundo 2D **tile-based** (chunks)  
+- [ ] Player com movimento, gravidade e colisão simples  
+- [ ] Colocar/remover blocos (replicação em tempo real)  
+- [ ] **Servidor autoritativo** com **tick fixo** (ex.: 20–30 TPS)  
+- [ ] **Cliente** com render a 60 FPS (LibGDX) e fila de rede  
+- [ ] **Sistema de threads**: rede, IO e geração de chunks em pools  
+- [ ] Persistência em arquivo binário por chunk  
+- [ ] **Interesse**: envio de dados apenas dos chunks próximos  
+- [ ] HUD básica (FPS, ping, coords)  
+- [ ] Testes básicos (JUnit) e logs (SLF4J/Logback)  
+
+
+---
+
+## 🛠️ Stack Técnica
+
+**Linguagem:** Java 17+  
+**Build:** Gradle (wrapper incluído)  
+**Render (cliente):** LibGDX (desktop, LWJGL3)  
+**Rede:** Netty (TCP inicialmente; UDP opcional depois)  
+**Serialização:** Kryo  
+**Logs:** SLF4J + Logback
 
 ---
 
 ## 🏗️ Build & Run
 
 ### 🔹 Pré-requisitos
-Certifique-se de ter instalado:
-- **[Linguagem/Runtime]** — versão X.X ou superior  
-- **[Ferramenta/Engine]** — versão X.X ou superior  
-- **[Gerenciador de pacotes]** — ex.: npm, pip, cargo, etc.  
-- **[Outros requisitos]** — ex.: compilador, biblioteca gráfica, driver de GPU  
+
+
 
 ---
 
 ### 🔹 Clonando o Repositório
 
+
+---
 
 
