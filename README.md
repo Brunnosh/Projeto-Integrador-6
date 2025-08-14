@@ -39,7 +39,7 @@ A renderização utiliza **LibGDX (desktop/LWJGL3)**. A comunicação, **Netty (
 
 ## 🛠️ Stack Técnica
 
-**Linguagem:** Java 17+  
+**Linguagem:** Java 21 LTS  
 **Build:** Gradle (wrapper incluído)  
 **Render (cliente):** LibGDX (desktop, LWJGL3)  
 **Rede:** Netty (TCP inicialmente; UDP opcional depois)  
