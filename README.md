@@ -1,4 +1,4 @@
-# 💰 **"SEM NOME" - Projeto-Integrador-6**
+#  **"SEM NOME" - Projeto-Integrador-6**
 
 ---
 
