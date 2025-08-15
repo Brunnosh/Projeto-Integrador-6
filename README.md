@@ -48,16 +48,15 @@ A renderização utiliza **LibGDX (desktop/LWJGL3)**. A comunicação, **Netty (
 
 ---
 
-## 🏗️ Build & Run
+## 🏗️ Build & Run (VSCode)
+
+### Clone o Repositório
 
 ### 🔹 Pré-requisitos
+- **Java 17**
 
-
-
----
-
-### 🔹 Clonando o Repositório
-
+### 🔹 Execução
+- CTRL + SHIFT + B -> Build & Run
 
 ---
 
