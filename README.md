@@ -39,12 +39,15 @@ A renderização utiliza **LibGDX (desktop/LWJGL3)**. A comunicação, **Netty (
 
 ## 🛠️ Stack Técnica
 
-**Linguagem:** Java 17 LTS  
-**Build:** Gradle (wrapper incluído)  
-**Render (cliente):** LibGDX (desktop, LWJGL3)  
-**Rede:** Netty (TCP inicialmente; UDP opcional depois)  
-**Serialização:** Kryo  
-**Logs:** SLF4J + Logback
+Render: LibGDX (LWJGL3)
+
+Rede: Começar NIO puro (TCP). Opcional migrar para Netty depois.
+
+Serialização: Binário próprio + versionamento. opcional biblioteca.
+
+Paralelismo: separar rede / simulação / workers / render, com filas e double-buffering de estado.
+
+Logs: SLF4J + Logback, com categorias (net, sim, render).
 
 ---
 
