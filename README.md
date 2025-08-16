@@ -53,13 +53,10 @@ Logs: SLF4J + Logback, com categorias (net, sim, render).
 
 ## 🏗️ Build & Run (VSCode)
 
-### Clone o Repositório
-
-### Configurações
-
 ### 🔹 Pré-requisitos
 - **Java 17**
 
+### Configurações
 - **Settings.json**
 ````
 {
@@ -74,7 +71,9 @@ Logs: SLF4J + Logback, com categorias (net, sim, render).
 
 
 ### 🔹 Execução
-- CTRL + SHIFT + B -> Build & Run
+- CTRL + SHIFT + B -> Build all
+- Executar client: ``./gradlew :client:run``
+- Executar server: ``./gradlew :server:run``
 
 ---
 
