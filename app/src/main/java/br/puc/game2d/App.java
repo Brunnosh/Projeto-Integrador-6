@@ -1,4 +1,4 @@
-package br.puc.pi6;
+package br.puc.game2d;
 
 public class App {
     public String getGreeting() {
@@ -7,5 +7,6 @@ public class App {
 
     public static void main(String[] args) {
         System.out.println(new App().getGreeting());
+        System.out.println("Rodando com Java: " + System.getProperty("java.version"));
     }
 }
