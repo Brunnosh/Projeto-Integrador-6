@@ -52,8 +52,23 @@ A renderização utiliza **LibGDX (desktop/LWJGL3)**. A comunicação, **Netty (
 
 ### Clone o Repositório
 
+### Configurações
+
 ### 🔹 Pré-requisitos
 - **Java 17**
+
+- **Settings.json**
+````
+{
+  "java.import.gradle.wrapper.enabled": true,
+  "java.import.gradle.version": "wrapper",
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.jdt.ls.java.home": "JAVA 17 PATH"
+}
+````
+- **Vscode Settings**
+  ````CTRL+SHIFT+P -> Configure java runtime -> Java 17````
+
 
 ### 🔹 Execução
 - CTRL + SHIFT + B -> Build & Run
