@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "projeto-integrador-6"
-include("app")
+include(":shared", ":server", ":client")
