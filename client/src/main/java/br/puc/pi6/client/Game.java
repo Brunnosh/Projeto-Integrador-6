@@ -30,7 +30,8 @@ public class Game extends ApplicationAdapter {
     private float x = 100, y = 100, speed = 200, size = 40;
 
     private boolean paused = false;
-    private Stage stage, pauseStage;
+    private Stage stage, pauseStage, hudStage;
+    private Label coordsLabel;
     private Skin skin;
     private boolean inLocalWorld = false;
 
@@ -49,6 +50,85 @@ public class Game extends ApplicationAdapter {
 
         buildMenu();
         buildPause();
+        buildHud();
+    }
+
+
+
+    @Override
+    public void render() {
+        float dt = Gdx.graphics.getDeltaTime();
+
+        Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        
+        if (inLocalWorld) {
+            if (!paused) {
+                pollInput(dt);
+            }
+            cam.position.set(x + size/2, y + size/2, 0); // centraliza no objeto
+            cam.update();
+            
+            shapes.setProjectionMatrix(cam.combined);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.rect(x, y, size, size);
+            shapes.end();
+            
+            coordsLabel.setText("X:" + (int)x/100 + "  Y:" + (int)y/100);
+            hudStage.act(dt);
+            hudStage.draw();
+
+            if (paused) {
+                pauseStage.act(dt);
+                pauseStage.draw();
+            }
+        } else {
+            stage.act(dt);
+            stage.draw();
+        }
+       
+    }
+
+    private void pollInput(float dt){
+
+        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            Gdx.app.log("Input", "Teste keybind dupla");
+        }
+
+        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
+            graphics.toggleVSync();
+            Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            paused = !paused;
+            if (paused) {
+                Gdx.input.setInputProcessor(pauseStage); // UI captura input
+            } else {
+                Gdx.input.setInputProcessor(null); // volta pro jogo
+                pauseStage.unfocusAll();
+                pauseStage.cancelTouchFocus();
+            }
+        }   
+
+        if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))  x -= speed * dt;
+        if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += speed * dt;
+        if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP))    y += speed * dt;
+        if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN))  y -= speed * dt;
+
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+        stage.getViewport().update(width, height, true);
+    }
+
+    @Override
+    public void dispose() {
+        if (shapes != null) shapes.dispose();
+        if (stage != null) stage.dispose();
+        if (skin != null) skin.dispose();
     }
 
     private void buildMenu() {
@@ -67,7 +147,7 @@ public class Game extends ApplicationAdapter {
         btnLocal.addListener(e -> {
             if (!btnLocal.isPressed()) return false;
             inLocalWorld = true;
-            Gdx.input.setInputProcessor(null); // input manual no mundo
+            Gdx.input.setInputProcessor(null); 
             return true;
         });
 
@@ -120,74 +200,16 @@ public class Game extends ApplicationAdapter {
         pauseTable.add(btnExit).width(200).height(50);
     }
 
-    @Override
-    public void render() {
-        float dt = Gdx.graphics.getDeltaTime();
+    private void buildHud(){
+        hudStage = new Stage(new ScreenViewport());
+        Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
-        Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        
-    if (inLocalWorld) {
-        if (!paused) {
-            pollInput(dt); 
-                    
-            shapes.setProjectionMatrix(cam.combined);
-            shapes.begin(ShapeRenderer.ShapeType.Filled);
-            shapes.rect(x, y, size, size);
-            shapes.end();
-        }
+        Table hudTable = new Table();
+        hudTable.top().left().pad(10); // canto superior esquerdo
+        hudTable.setFillParent(true);
+        hudStage.addActor(hudTable);
 
-
-        if (paused) {
-            pauseStage.act(dt);
-            pauseStage.draw();
-        }
-    } else {
-        stage.act(dt);
-        stage.draw();
-    }
-       
-    }
-
-    private void pollInput(float dt){
-
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.R)) {
-            Gdx.app.log("Input", "Teste keybind dupla");
-        }
-
-        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
-            graphics.toggleVSync();
-            Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            paused = !paused;
-            if (paused) {
-                Gdx.input.setInputProcessor(pauseStage); // UI captura input
-            } else {
-                Gdx.input.setInputProcessor(null); // volta pro jogo
-                pauseStage.unfocusAll();
-                pauseStage.cancelTouchFocus();
-            }
-        }   
-
-        if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))  x -= speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP))    y += speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN))  y -= speed * dt;
-
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        viewport.update(width, height);
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void dispose() {
-        if (shapes != null) shapes.dispose();
-        if (stage != null) stage.dispose();
-        if (skin != null) skin.dispose();
+        coordsLabel = new Label("X:0 Y:0", skin);
+        hudTable.add(coordsLabel);
     }
 }
