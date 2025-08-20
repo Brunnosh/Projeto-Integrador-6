@@ -4,7 +4,9 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import br.puc.pi6.client.input.Action;
 import br.puc.pi6.client.input.ActionBindings;
@@ -15,12 +17,16 @@ public class Game extends ApplicationAdapter {
     private GraphicsController graphics;
     private ActionBindings bindings;
 
+    private OrthographicCamera cam;
+    private FitViewport viewport;
     private ShapeRenderer shapes;
     private float x = 100, y = 100, speed = 200, size = 40;
 
     @Override
     public void create() {
         shapes   = new ShapeRenderer();
+        cam = new OrthographicCamera();
+        viewport = new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), cam);
         graphics = new GraphicsController(true); // coerente com cfg.useVsync(true)
 
         bindings = new ActionBindings();
@@ -37,6 +43,7 @@ public class Game extends ApplicationAdapter {
         Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
+        shapes.setProjectionMatrix(cam.combined);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.rect(x, y, size, size);
         shapes.end();
@@ -69,7 +76,7 @@ public class Game extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        // atualizar viewport/câmera quando a janela muda de tamanho
+        viewport.update(width, height);
     }
 
     @Override
