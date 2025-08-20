@@ -8,14 +8,12 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-import br.puc.pi6.client.input.Action;
-import br.puc.pi6.client.input.ActionBindings;
 import br.puc.pi6.client.utils.GraphicsController;
 
 public class Game extends ApplicationAdapter {
 
     private GraphicsController graphics;
-    private ActionBindings bindings;
+    
 
     private OrthographicCamera cam;
     private FitViewport viewport;
@@ -29,8 +27,6 @@ public class Game extends ApplicationAdapter {
         viewport = new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), cam);
         graphics = new GraphicsController(true); // coerente com cfg.useVsync(true)
 
-        bindings = new ActionBindings();
-        bindings.bind(Input.Keys.V, Action.TOGGLE_VSYNC);
         //UI: Adicionar multiplexer
     }
 
@@ -56,16 +52,10 @@ public class Game extends ApplicationAdapter {
             Gdx.app.log("Input", "Teste keybind dupla");
         }
 
-        bindings.scanJustPressed(action -> {
-            switch (action) {
-                case TOGGLE_VSYNC:
-                    graphics.toggleVSync();
-                    Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
-                    break;
-
-            }
-        });
-
+        if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
+            graphics.toggleVSync();
+            Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
+        }
 
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))  x -= speed * dt;
         if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += speed * dt;
