@@ -6,12 +6,14 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -27,7 +29,8 @@ public class Game extends ApplicationAdapter {
     private ShapeRenderer shapes;
     private float x = 100, y = 100, speed = 200, size = 40;
 
-    private Stage stage;
+    private boolean paused = false;
+    private Stage stage, pauseStage;
     private Skin skin;
     private boolean inLocalWorld = false;
 
@@ -45,9 +48,10 @@ public class Game extends ApplicationAdapter {
         skin = new Skin(Gdx.files.internal("uiskin.json")); // baixe uiskin.json + atlas + font em assets/
 
         buildMenu();
+        buildPause();
     }
 
-        private void buildMenu() {
+    private void buildMenu() {
         stage.clear();
 
         Table root = new Table();
@@ -81,6 +85,41 @@ public class Game extends ApplicationAdapter {
         root.add(btnConnect).width(280).height(50).row();
     }
 
+    private void buildPause() {
+        pauseStage = new Stage(new ScreenViewport());
+        Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
+
+        Table pauseTable = new Table();
+        pauseTable.setFillParent(true);
+        pauseTable.defaults().pad(10);
+        pauseStage.addActor(pauseTable);
+
+        Label pauseLabel = new Label("PAUSADO", skin);
+        TextButton btnResume = new TextButton("Continuar", skin);
+        TextButton btnExit = new TextButton("Sair do Jogo", skin);
+
+        btnResume.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                paused = false;
+                Gdx.input.setInputProcessor(null);
+                pauseStage.unfocusAll();
+                pauseStage.cancelTouchFocus();
+            }
+        });
+
+        btnExit.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                Gdx.app.exit();
+            }
+        });
+
+        pauseTable.add(pauseLabel).row();
+        pauseTable.add(btnResume).width(200).height(50).row();
+        pauseTable.add(btnExit).width(200).height(50);
+    }
+
     @Override
     public void render() {
         float dt = Gdx.graphics.getDeltaTime();
@@ -88,17 +127,25 @@ public class Game extends ApplicationAdapter {
         Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
-        if (inLocalWorld) {
-            pollInput(dt);
-
+    if (inLocalWorld) {
+        if (!paused) {
+            pollInput(dt); 
+                    
             shapes.setProjectionMatrix(cam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
             shapes.rect(x, y, size, size);
             shapes.end();
-        } else {
-            stage.act(dt);
-            stage.draw();
         }
+
+
+        if (paused) {
+            pauseStage.act(dt);
+            pauseStage.draw();
+        }
+    } else {
+        stage.act(dt);
+        stage.draw();
+    }
        
     }
 
@@ -112,6 +159,17 @@ public class Game extends ApplicationAdapter {
             graphics.toggleVSync();
             Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
         }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            paused = !paused;
+            if (paused) {
+                Gdx.input.setInputProcessor(pauseStage); // UI captura input
+            } else {
+                Gdx.input.setInputProcessor(null); // volta pro jogo
+                pauseStage.unfocusAll();
+                pauseStage.cancelTouchFocus();
+            }
+        }   
 
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))  x -= speed * dt;
         if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += speed * dt;
