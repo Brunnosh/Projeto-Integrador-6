@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -14,7 +15,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import br.puc.pi6.client.utils.GraphicsController;
@@ -27,8 +27,13 @@ public class Game extends ApplicationAdapter {
 
     //--Grafico--//
     private GraphicsController graphics;
-    private OrthographicCamera cam;
-    private FitViewport viewport;
+    
+    private OrthographicCamera worldCam;
+    private ScreenViewport  worldViewport;
+
+    private OrthographicCamera uiCam;
+    private ScreenViewport  uiViewport;
+    
     private ShapeRenderer shapes;
     private float x = 100, y = 100, speed = 200, size = 40;
 
@@ -43,14 +48,27 @@ public class Game extends ApplicationAdapter {
     private GameWorld world;
     private WorldSize selectedSize = WorldSize.MEDIUM; // default
 
+    float zoomStep = 0.1f;
+    float zoomMin = 0.25f;
+    float zoomMax = 3f;
+
     @Override
     public void create() {
         shapes   = new ShapeRenderer();
-        cam = new OrthographicCamera();
-        viewport = new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), cam);
         graphics = new GraphicsController(true);
     
-        stage = new Stage(new ScreenViewport());
+        worldCam = new OrthographicCamera();
+        worldViewport = new ScreenViewport(worldCam);
+        worldCam.update();
+
+        uiCam = new OrthographicCamera();
+        uiViewport = new ScreenViewport(uiCam);
+        // UI em pixels reais da tela
+        uiCam.update();
+
+        stage = new Stage(uiViewport);
+        pauseStage= new Stage(uiViewport);
+        hudStage  = new Stage(uiViewport);
         Gdx.input.setInputProcessor(stage);
         
         skin = new Skin(Gdx.files.internal("uiskin.json")); 
@@ -72,10 +90,12 @@ public class Game extends ApplicationAdapter {
             if (!paused) {
                 pollInput(dt);
             }
-            cam.position.set(x + size/2, y + size/2, 0); // centraliza no objeto
-            cam.update();
+            worldCam.position.set(x + size / 2, y + size / 2, 0); // centraliza no objeto
+            worldCam.update();
             
-            shapes.setProjectionMatrix(cam.combined);
+            // aplica viewport do mundo
+            worldViewport.apply();
+            shapes.setProjectionMatrix(worldCam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
 
 
@@ -101,15 +121,19 @@ public class Game extends ApplicationAdapter {
             shapes.rect(x, y, size, size*2);
             shapes.end();
             
-            coordsLabel.setText("X:" + (int)x/100 + "  Y:" + (int)y/100);
+            
+            uiViewport.apply();
+            coordsLabel.setText("X:" + (int) x + " Y:" + (int) y);
             hudStage.act(dt);
             hudStage.draw();
 
             if (paused) {
+                uiViewport.apply();
                 pauseStage.act(dt);
                 pauseStage.draw();
             }
         } else {
+            uiViewport.apply();
             stage.act(dt);
             stage.draw();
         }
@@ -117,6 +141,8 @@ public class Game extends ApplicationAdapter {
     }
 
     private void pollInput(float dt){
+        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) ||
+                Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
 
         if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.R)) {
             Gdx.app.log("Input", "Teste keybind dupla");
@@ -125,6 +151,20 @@ public class Game extends ApplicationAdapter {
         if(Gdx.input.isKeyJustPressed(Input.Keys.V)){
             graphics.toggleVSync();
             Gdx.app.log("VSync", graphics.isVSync() ? "ON" : "OFF");
+        }
+
+        // ZOOM IN ( + )
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {    // SHIFT + '=' => '+'
+            worldCam.zoom -= zoomStep;
+            worldCam.zoom = MathUtils.clamp(worldCam.zoom, zoomMin, zoomMax);
+            worldCam.update();
+        }
+
+        // ZOOM OUT ( - )
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_SUBTRACT)) {                 // '-' da fileira principal
+            worldCam.zoom += zoomStep;
+            worldCam.zoom = MathUtils.clamp(worldCam.zoom, zoomMin, zoomMax);
+            worldCam.update();
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -147,8 +187,12 @@ public class Game extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height);
-        stage.getViewport().update(width, height, true);
+    worldViewport.update(width, height); // 1:1 com a janela, sem manter proporção “virtual”
+    uiViewport.update(width, height);    // UI em pixels da tela
+
+    if (stage != null)     stage.getViewport().update(width, height, true);
+    if (pauseStage != null)pauseStage.getViewport().update(width, height, true);
+    if (hudStage != null)  hudStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -175,8 +219,6 @@ public class Game extends ApplicationAdapter {
             if (!btnLocal.isPressed()) return false;
             world = new GameWorld(selectedSize);
             new WorldGen().generate(world);
-            cam.position.set(world.getWidth() * 8 / 2f, world.getHeight() * 8 / 2f, 0);
-            cam.update();
             inLocalWorld = true;
             Gdx.input.setInputProcessor(null); 
             return true;
