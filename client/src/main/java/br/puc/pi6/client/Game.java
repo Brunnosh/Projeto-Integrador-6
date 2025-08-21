@@ -18,35 +18,41 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import br.puc.pi6.client.utils.GraphicsController;
+import br.puc.pi6.client.world.GameWorld;
+import br.puc.pi6.client.world.WorldGen;
+import br.puc.pi6.client.world.worldAttribs.WorldSize;
 
 public class Game extends ApplicationAdapter {
 
+    //--Grafico--//
     private GraphicsController graphics;
-    
-
     private OrthographicCamera cam;
     private FitViewport viewport;
     private ShapeRenderer shapes;
     private float x = 100, y = 100, speed = 200, size = 40;
 
+    //--UI--//
     private boolean paused = false;
     private Stage stage, pauseStage, hudStage;
     private Label coordsLabel;
     private Skin skin;
     private boolean inLocalWorld = false;
 
+    //--Mundo--//
+    private GameWorld world;
+    private WorldSize selectedSize = WorldSize.MEDIUM; // default
 
     @Override
     public void create() {
         shapes   = new ShapeRenderer();
         cam = new OrthographicCamera();
         viewport = new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), cam);
-        graphics = new GraphicsController(true); // coerente com cfg.useVsync(true)
+        graphics = new GraphicsController(true);
     
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
         
-        skin = new Skin(Gdx.files.internal("uiskin.json")); // baixe uiskin.json + atlas + font em assets/
+        skin = new Skin(Gdx.files.internal("uiskin.json")); 
 
         buildMenu();
         buildPause();
@@ -57,11 +63,10 @@ public class Game extends ApplicationAdapter {
 
     @Override
     public void render() {
-        float dt = Gdx.graphics.getDeltaTime();
-
         Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
+        float dt = Gdx.graphics.getDeltaTime();
         if (inLocalWorld) {
             if (!paused) {
                 pollInput(dt);
@@ -71,6 +76,32 @@ public class Game extends ApplicationAdapter {
             
             shapes.setProjectionMatrix(cam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+
+            // desenha tiles (placeholder: blocos 8x8)
+            if (world != null) {
+                for (int ix = 0; ix < world.getWidth(); ix++) {
+                    for (int iy = 0; iy < world.getHeight(); iy++) {
+                        int block = world.getTile(ix, iy);
+                        if (block == 0) continue; // ar
+
+                        switch (block) {
+                            case 1: shapes.setColor(0f, 0.8f, 0f, 1f); break;         // grama
+                            case 2: shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;      // terra
+                            case 3: shapes.setColor(0.6f, 0.4f, 0.2f, 1f); break;      // tronco
+                            default: shapes.setColor(0.3f, 0.3f, 0.3f, 1f); break;
+                        }
+                        shapes.rect(ix * 8f, iy * 8f, 8f, 8f);
+                    }
+                }
+            }
+
+            // seu “player”/shape provisório continua igual:
+            shapes.setColor(1f, 0.2f, 0.2f, 1f);
+            shapes.rect(x, y, size, size);
+
+
+
             shapes.rect(x, y, size, size);
             shapes.end();
             
@@ -146,6 +177,10 @@ public class Game extends ApplicationAdapter {
 
         btnLocal.addListener(e -> {
             if (!btnLocal.isPressed()) return false;
+            world = new GameWorld(selectedSize);
+            new WorldGen().generate(world);
+            cam.position.set(world.getWidth() * 8 / 2f, world.getHeight() * 8 / 2f, 0);
+            cam.update();
             inLocalWorld = true;
             Gdx.input.setInputProcessor(null); 
             return true;
