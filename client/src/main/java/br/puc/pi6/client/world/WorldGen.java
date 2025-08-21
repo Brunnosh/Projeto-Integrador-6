@@ -10,9 +10,9 @@ public class WorldGen {
 
         for (int x = 0; x < w.getWidth(); x++) {
             for (int y = 0; y < w.getHeight(); y++) {
-                if (y < ground - 2) w.setTile(x, y, 0);        // ar
-                else if (y == ground - 2) w.setTile(x, y, 1);  // grama
-                else w.setTile(x, y, 2);                       // terra
+                if (y < ground - 2) w.setTile(x, y, Tile.AIR);        // ar
+                else if (y == ground - 2) w.setTile(x, y, Tile.GRASS);  // grama
+                else w.setTile(x, y, Tile.DIRT);                       // terra
             }
         }
     }

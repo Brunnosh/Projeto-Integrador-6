@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import br.puc.pi6.client.utils.GraphicsController;
 import br.puc.pi6.client.world.GameWorld;
+import br.puc.pi6.client.world.Tile;
 import br.puc.pi6.client.world.WorldGen;
 import br.puc.pi6.client.world.worldAttribs.WorldSize;
 
@@ -82,13 +83,12 @@ public class Game extends ApplicationAdapter {
             if (world != null) {
                 for (int ix = 0; ix < world.getWidth(); ix++) {
                     for (int iy = 0; iy < world.getHeight(); iy++) {
-                        int block = world.getTile(ix, iy);
-                        if (block == 0) continue; // ar
+                        Tile block = world.getTile(ix, iy);
+                        if (block == Tile.AIR) continue; // ar
 
                         switch (block) {
-                            case 1: shapes.setColor(0f, 0.8f, 0f, 1f); break;         // grama
-                            case 2: shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;      // terra
-                            case 3: shapes.setColor(0.6f, 0.4f, 0.2f, 1f); break;      // tronco
+                            case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;         // grama
+                            case DIRT: shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;      // terra
                             default: shapes.setColor(0.3f, 0.3f, 0.3f, 1f); break;
                         }
                         shapes.rect(ix * 8f, iy * 8f, 8f, 8f);
@@ -98,11 +98,7 @@ public class Game extends ApplicationAdapter {
 
             // seu “player”/shape provisório continua igual:
             shapes.setColor(1f, 0.2f, 0.2f, 1f);
-            shapes.rect(x, y, size, size);
-
-
-
-            shapes.rect(x, y, size, size);
+            shapes.rect(x, y, size, size*2);
             shapes.end();
             
             coordsLabel.setText("X:" + (int)x/100 + "  Y:" + (int)y/100);
