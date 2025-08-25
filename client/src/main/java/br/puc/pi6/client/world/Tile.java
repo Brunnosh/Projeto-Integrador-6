@@ -1,5 +1,6 @@
 package br.puc.pi6.client.world;
 
+//TODO:Tiles com atributos diferentes (friccao,etc..) (BOX2D)
 public enum Tile {
     AIR(0),
     DIRT(1),

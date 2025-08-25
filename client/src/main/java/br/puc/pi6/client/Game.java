@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -22,8 +24,8 @@ import br.puc.pi6.client.utils.GraphicsController;
 import br.puc.pi6.client.world.GameWorld;
 import br.puc.pi6.client.world.Tile;
 import br.puc.pi6.client.world.WorldGen;
+import br.puc.pi6.client.world.WorldPhysicsController;
 import br.puc.pi6.client.world.worldAttribs.WorldSize;
-import com.badlogic.gdx.physics.box2d.*;
 
 public class Game extends ApplicationAdapter {
 
@@ -37,18 +39,20 @@ public class Game extends ApplicationAdapter {
     private ScreenViewport  uiViewport;
     
     private ShapeRenderer shapes;
-    private float x = 100, y = 100, speed = 200, size = Constants.TILE_SIZE_PX*2;
+    private float x = 100, y = 100, speed = 200, widht = Constants.TILE_SIZE_PX*2, height = Constants.TILE_SIZE_PX*3;
 
     //--UI--//
     private boolean paused = false;
     private Stage stage, pauseStage, hudStage;
-    private Label coordsLabel;
+    private Label coordsLabel, fpsLabel;
     private Skin skin;
     private boolean inLocalWorld = false;
 
     //--Mundo--//
-    private GameWorld world;
-    private WorldSize selectedSize = WorldSize.MEDIUM; // default
+    private WorldSize selectedSize = WorldSize.SMALL; // default
+    private GameWorld world; // Nossa classe mundo
+    private World physicsWorld; // Mundo Box2D (fisica)
+    private WorldPhysicsController physicsController; // Nossa classe para gerenciar fisica + mundo
 
     float zoomStep = 0.1f;
     float zoomMin = 0.25f;
@@ -87,51 +91,52 @@ public class Game extends ApplicationAdapter {
     public void render() {
         Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        
         float dt = Gdx.graphics.getDeltaTime();
+        
         if (inLocalWorld) {
             if (!paused) {
                 pollInput(dt);
+                physicsWorld.step(1/60f, 6, 2);
             }
-            worldCam.position.set(x + size / 2, y + size / 2, 0); // centraliza no objeto
+
+            // centraliza camera no "player" todo frame
+            worldCam.position.set(x + widht / 2, y + height / 2, 0); 
             worldCam.update();
             
-            // aplica viewport do mundo
+            // aplica viewport e matriz da camera a ser usada na render
             worldViewport.apply();
             shapes.setProjectionMatrix(worldCam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-
-            // desenha tiles (placeholder: blocos 8x8)
+            // RENDER MUNDO
             if (world != null) {
                 for (int ix = 0; ix < world.getWidth(); ix++) {
                     for (int iy = 0; iy < world.getHeight(); iy++) {
                         Tile block = world.getTile(ix, iy);
-                        if (block == Tile.AIR) continue; // ar
+                        if (block == Tile.AIR) continue;
 
                         switch (block) {
-                            case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;   // grama
-                            case DIRT:  shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;// terra
+                            case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;
+                            case DIRT:  shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;
                             default:    shapes.setColor(0.3f, 0.3f, 0.3f, 1f); break;
                         }
-
-                        // posição em pixels: tile index × TILE_SIZE_PX
                         float px = ix * Constants.TILE_SIZE_PX;
                         float py = iy * Constants.TILE_SIZE_PX;
-
                         shapes.rect(px, py, Constants.TILE_SIZE_PX, Constants.TILE_SIZE_PX);
                     }
                 }
             }
 
-            // seu “player”/shape provisório continua igual:
+            // Render do "player"
             shapes.setColor(1f, 0.2f, 0.2f, 1f);
-            shapes.rect(x, y, size, size*2);
+            shapes.rect(x, y, widht, height);
             shapes.end();
             
-            
+            //Render da UI/HUD
             uiViewport.apply();
             coordsLabel.setText("X:" + (int) x + " Y:" + (int) y);
+            fpsLabel.setText("FPS: " + Gdx.graphics.getFramesPerSecond());
+
             hudStage.act(dt);
             hudStage.draw();
 
@@ -225,9 +230,32 @@ public class Game extends ApplicationAdapter {
 
         btnLocal.addListener(e -> {
             if (!btnLocal.isPressed()) return false;
+
+            physicsWorld = new World(new Vector2(0, -9.8f), true);
             world = new GameWorld(selectedSize);
             new WorldGen().generate(world);
             inLocalWorld = true;
+            physicsController = new WorldPhysicsController(physicsWorld, world);
+            physicsController.buildPhysicsFromTiles();
+
+            /*
+            physicsWorld.setContactListener(new ContactListener() {
+            @Override public void beginContact(Contact contact) {
+                Object a = contact.getFixtureA().getUserData();
+                Object b = contact.getFixtureB().getUserData();
+                if (a != null && a.equals("player-foot")) { player.beginFootContact(); }
+                if (b != null && b.equals("player-foot")) { player.beginFootContact(); }
+            }
+            @Override public void endContact(Contact contact) {
+                Object a = contact.getFixtureA().getUserData();
+                Object b = contact.getFixtureB().getUserData();
+                if (a != null && a.equals("player-foot")) { player.endFootContact(); }
+                if (b != null && b.equals("player-foot")) { player.endFootContact(); }
+            }
+            @Override public void preSolve(Contact c, Manifold m) {}
+            @Override public void postSolve(Contact c, ContactImpulse i) {}
+            });
+             */
             x = world.getWidth()/2 * Constants.TILE_SIZE_PX;
             y= world.getHeight() * Constants.TILE_SIZE_PX;
             Gdx.input.setInputProcessor(null); 
@@ -284,15 +312,18 @@ public class Game extends ApplicationAdapter {
     }
 
     private void buildHud(){
-        hudStage = new Stage(new ScreenViewport());
-        Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
+    hudStage = new Stage(new ScreenViewport());
+    Skin skin = new Skin(Gdx.files.internal("uiskin.json"));
 
-        Table hudTable = new Table();
-        hudTable.top().left().pad(10); // canto superior esquerdo
-        hudTable.setFillParent(true);
-        hudStage.addActor(hudTable);
+    Table hudTable = new Table();
+    hudTable.top().left().pad(10); // canto superior esquerdo
+    hudTable.setFillParent(true);
+    hudStage.addActor(hudTable);
 
-        coordsLabel = new Label("X:0 Y:0", skin);
-        hudTable.add(coordsLabel);
+    coordsLabel = new Label("X:0 Y:0", skin);
+    fpsLabel    = new Label("FPS: 0", skin);
+
+    hudTable.add(coordsLabel).left().row(); // primeira linha
+    hudTable.add(fpsLabel).left().row();    // segunda linha, logo embaixo
     }
 }
