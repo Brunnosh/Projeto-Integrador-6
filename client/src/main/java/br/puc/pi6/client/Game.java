@@ -17,11 +17,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import br.puc.pi6.client.utils.Constants;
 import br.puc.pi6.client.utils.GraphicsController;
 import br.puc.pi6.client.world.GameWorld;
 import br.puc.pi6.client.world.Tile;
 import br.puc.pi6.client.world.WorldGen;
 import br.puc.pi6.client.world.worldAttribs.WorldSize;
+import com.badlogic.gdx.physics.box2d.*;
 
 public class Game extends ApplicationAdapter {
 
@@ -35,7 +37,7 @@ public class Game extends ApplicationAdapter {
     private ScreenViewport  uiViewport;
     
     private ShapeRenderer shapes;
-    private float x = 100, y = 100, speed = 200, size = 40;
+    private float x = 100, y = 100, speed = 200, size = Constants.TILE_SIZE_PX*2;
 
     //--UI--//
     private boolean paused = false;
@@ -54,6 +56,7 @@ public class Game extends ApplicationAdapter {
 
     @Override
     public void create() {
+        
         shapes   = new ShapeRenderer();
         graphics = new GraphicsController(true);
     
@@ -107,11 +110,16 @@ public class Game extends ApplicationAdapter {
                         if (block == Tile.AIR) continue; // ar
 
                         switch (block) {
-                            case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;         // grama
-                            case DIRT: shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;      // terra
-                            default: shapes.setColor(0.3f, 0.3f, 0.3f, 1f); break;
+                            case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;   // grama
+                            case DIRT:  shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;// terra
+                            default:    shapes.setColor(0.3f, 0.3f, 0.3f, 1f); break;
                         }
-                        shapes.rect(ix * 8f, iy * 8f, 8f, 8f);
+
+                        // posição em pixels: tile index × TILE_SIZE_PX
+                        float px = ix * Constants.TILE_SIZE_PX;
+                        float py = iy * Constants.TILE_SIZE_PX;
+
+                        shapes.rect(px, py, Constants.TILE_SIZE_PX, Constants.TILE_SIZE_PX);
                     }
                 }
             }
@@ -220,6 +228,8 @@ public class Game extends ApplicationAdapter {
             world = new GameWorld(selectedSize);
             new WorldGen().generate(world);
             inLocalWorld = true;
+            x = world.getWidth()/2 * Constants.TILE_SIZE_PX;
+            y= world.getHeight() * Constants.TILE_SIZE_PX;
             Gdx.input.setInputProcessor(null); 
             return true;
         });
