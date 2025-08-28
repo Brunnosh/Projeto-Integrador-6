@@ -7,8 +7,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -19,12 +17,16 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import br.puc.pi6.client.physics.CollisionManager;
+import br.puc.pi6.client.physics.PlayerPhysics;
+import br.puc.pi6.client.player.Player;
+import br.puc.pi6.client.player.PlayerInput;
+import br.puc.pi6.client.player.PlayerRenderer;
 import br.puc.pi6.client.utils.Constants;
 import br.puc.pi6.client.utils.GraphicsController;
 import br.puc.pi6.client.world.GameWorld;
 import br.puc.pi6.client.world.Tile;
 import br.puc.pi6.client.world.WorldGen;
-import br.puc.pi6.client.world.WorldPhysicsController;
 import br.puc.pi6.client.world.worldAttribs.WorldSize;
 
 public class Game extends ApplicationAdapter {
@@ -39,7 +41,9 @@ public class Game extends ApplicationAdapter {
     private ScreenViewport  uiViewport;
     
     private ShapeRenderer shapes;
-    private float x = 100, y = 100, speed = 200, widht = Constants.TILE_SIZE_PX*2, height = Constants.TILE_SIZE_PX*3;
+    
+
+    
 
     //--UI--//
     private boolean paused = false;
@@ -51,12 +55,23 @@ public class Game extends ApplicationAdapter {
     //--Mundo--//
     private WorldSize selectedSize = WorldSize.SMALL; // default
     private GameWorld world; // Nossa classe mundo
-    private World physicsWorld; // Mundo Box2D (fisica)
-    private WorldPhysicsController physicsController; // Nossa classe para gerenciar fisica + mundo
+
+    private CollisionManager tileCollision;
+    private PlayerInput     playerInput  = new PlayerInput();
+    private PlayerPhysics kinPlayer;
+    private PlayerRenderer  playerRenderer = new PlayerRenderer();
+
+    //--Player--//
+    private Player player;
 
     float zoomStep = 0.1f;
     float zoomMin = 0.25f;
     float zoomMax = 3f;
+
+    private static final float TIMESTEP = 1f / 120f; // 120 Hz suave (pode usar 1/60)
+    private static final int   MAX_STEPS_PER_FRAME = 8; // segurança
+
+    private float ACCUMULATOR = 0f;
 
     @Override
     public void create() {
@@ -87,34 +102,44 @@ public class Game extends ApplicationAdapter {
 
 
 
-    @Override
+   @Override
     public void render() {
         Gdx.gl.glClearColor(0.08f, 0.09f, 0.12f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         float dt = Gdx.graphics.getDeltaTime();
-        
-        if (inLocalWorld) {
-            if (!paused) {
-                pollInput(dt);
-                physicsWorld.step(1/60f, 6, 2);
-            }
 
-            // centraliza camera no "player" todo frame
-            worldCam.position.set(x + widht / 2, y + height / 2, 0); 
+        if (inLocalWorld) {
+        if (!paused) {
+            // acumula tempo e roda updates de passo fixo
+            pollInput(dt);
+            ACCUMULATOR += dt;
+            int steps = 0;
+            while (ACCUMULATOR >= TIMESTEP && steps < MAX_STEPS_PER_FRAME) {
+                playerInput.poll();                 // lê input uma vez por passo
+                if (kinPlayer != null) {
+                    kinPlayer.update(TIMESTEP, playerInput); // SEM usar dt do frame
+                }
+                ACCUMULATOR -= TIMESTEP;
+                steps++;
+            }
+        }
+
+            // câmera segue o player
+            if (kinPlayer != null) {
+                worldCam.position.set(kinPlayer.centerX(), kinPlayer.centerY(), 0);
+            }
             worldCam.update();
-            
-            // aplica viewport e matriz da camera a ser usada na render
+
+            // desenhar mundo em PIXELS
             worldViewport.apply();
             shapes.setProjectionMatrix(worldCam.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-            // RENDER MUNDO
             if (world != null) {
                 for (int ix = 0; ix < world.getWidth(); ix++) {
                     for (int iy = 0; iy < world.getHeight(); iy++) {
                         Tile block = world.getTile(ix, iy);
                         if (block == Tile.AIR) continue;
-
                         switch (block) {
                             case GRASS: shapes.setColor(0f, 0.8f, 0f, 1f); break;
                             case DIRT:  shapes.setColor(0.5f, 0.3f, 0.1f, 1f); break;
@@ -127,14 +152,23 @@ public class Game extends ApplicationAdapter {
                 }
             }
 
-            // Render do "player"
-            shapes.setColor(1f, 0.2f, 0.2f, 1f);
-            shapes.rect(x, y, widht, height);
+            // desenhar player em PIXELS
+            if (kinPlayer != null) {
+                shapes.setColor(1f, 0.2f, 0.2f, 1f);
+                playerRenderer.draw(shapes, kinPlayer); // desenha o AABB do player
+            }
+
             shapes.end();
-            
-            //Render da UI/HUD
+
+            // HUD
             uiViewport.apply();
-            coordsLabel.setText("X:" + (int) x + " Y:" + (int) y);
+            if (kinPlayer != null) {
+                int px = (int)kinPlayer.centerX();
+                int py = (int)kinPlayer.centerY();
+                coordsLabel.setText("X:" + px + " Y:" + py);
+            } else {
+                coordsLabel.setText("X:0 Y:0");
+            }
             fpsLabel.setText("FPS: " + Gdx.graphics.getFramesPerSecond());
 
             hudStage.act(dt);
@@ -150,7 +184,6 @@ public class Game extends ApplicationAdapter {
             stage.act(dt);
             stage.draw();
         }
-       
     }
 
     private void pollInput(float dt){
@@ -191,21 +224,18 @@ public class Game extends ApplicationAdapter {
             }
         }   
 
-        if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT))  x -= speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) x += speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP))    y += speed * dt;
-        if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN))  y -= speed * dt;
+
 
     }
 
     @Override
     public void resize(int width, int height) {
-    worldViewport.update(width, height); // 1:1 com a janela, sem manter proporção “virtual”
-    uiViewport.update(width, height);    // UI em pixels da tela
+        worldViewport.update(width, height); // 1:1 com a janela, sem manter proporção “virtual”
+        uiViewport.update(width, height);    // UI em pixels da tela
 
-    if (stage != null)     stage.getViewport().update(width, height, true);
-    if (pauseStage != null)pauseStage.getViewport().update(width, height, true);
-    if (hudStage != null)  hudStage.getViewport().update(width, height, true);
+        if (stage != null)     stage.getViewport().update(width, height, true);
+        if (pauseStage != null)pauseStage.getViewport().update(width, height, true);
+        if (hudStage != null)  hudStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -213,6 +243,8 @@ public class Game extends ApplicationAdapter {
         if (shapes != null) shapes.dispose();
         if (stage != null) stage.dispose();
         if (skin != null) skin.dispose();
+        if (pauseStage != null) pauseStage.dispose();
+        if (hudStage != null) hudStage.dispose();
     }
 
     private void buildMenu() {
@@ -231,33 +263,22 @@ public class Game extends ApplicationAdapter {
         btnLocal.addListener(e -> {
             if (!btnLocal.isPressed()) return false;
 
-            physicsWorld = new World(new Vector2(0, -9.8f), true);
             world = new GameWorld(selectedSize);
             new WorldGen().generate(world);
-            inLocalWorld = true;
-            physicsController = new WorldPhysicsController(physicsWorld, world);
-            physicsController.buildPhysicsFromTiles();
+            
+            tileCollision = new CollisionManager(world);
 
-            /*
-            physicsWorld.setContactListener(new ContactListener() {
-            @Override public void beginContact(Contact contact) {
-                Object a = contact.getFixtureA().getUserData();
-                Object b = contact.getFixtureB().getUserData();
-                if (a != null && a.equals("player-foot")) { player.beginFootContact(); }
-                if (b != null && b.equals("player-foot")) { player.beginFootContact(); }
-            }
-            @Override public void endContact(Contact contact) {
-                Object a = contact.getFixtureA().getUserData();
-                Object b = contact.getFixtureB().getUserData();
-                if (a != null && a.equals("player-foot")) { player.endFootContact(); }
-                if (b != null && b.equals("player-foot")) { player.endFootContact(); }
-            }
-            @Override public void preSolve(Contact c, Manifold m) {}
-            @Override public void postSolve(Contact c, ContactImpulse i) {}
-            });
-             */
-            x = world.getWidth()/2 * Constants.TILE_SIZE_PX;
-            y= world.getHeight() * Constants.TILE_SIZE_PX;
+            float spawnXpx = world.getWidth()  * Constants.TILE_SIZE_PX * 0.5f;
+            float spawnYpx = world.getHeight() * Constants.TILE_SIZE_PX ;
+
+            kinPlayer = new PlayerPhysics(
+                    spawnXpx,
+                    spawnYpx,
+                    Constants.TILE_SIZE_PX,
+                    Constants.TILE_SIZE_PX * 2f,
+                    tileCollision
+            );
+            inLocalWorld = true; 
             Gdx.input.setInputProcessor(null); 
             return true;
         });

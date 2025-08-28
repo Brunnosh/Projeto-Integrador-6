@@ -30,7 +30,12 @@ public class GameWorld {
     }
 
     public Tile[][] getTiles() { return tiles; }
-
+    
+    public boolean isSolid(int x, int y) {
+        if (x < 0 || y < 0 || x >= width || y >= height) return true; 
+        
+        return tiles[x][y] != Tile.AIR;
+    }
 
 
 }
