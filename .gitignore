@@ -1,0 +1,36 @@
+# Dependências e Logs
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Arquivos de Ambiente
+.env
+.env.local
+.env.*.local
+
+# Pastas de Build e Saída
+/build
+/dist
+/.expo/
+/web-build/
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDEs
+.idea/
+.vscode/
+*.suo
+*.user
+
+# Específico do React Native (Android)
+/mobile/android/app/build/
+/mobile/android/build/
+/mobile/android/gradle-wrapper.jar
+/mobile/android/.gradle/
+/mobile/android/local.properties
+
+# Específico do React Native (iOS)
+/mobile/ios/build/
+/mobile/ios/Pods/
