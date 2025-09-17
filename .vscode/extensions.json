@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "oracle.oracle-java",
+        "vscjava.vscode-java-pack",
+        "wayou.vscode-todo-highlight",
+
+    ]
+}
