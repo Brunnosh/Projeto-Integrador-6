@@ -50,21 +50,6 @@ Study Zen is a mobile application designed to help university students improve f
 
 ---
 
-## Project Structure
-
-This project is a monorepo containing both the backend and frontend source code in separate directories.
-
-/Projeto-Integrador-6
-├── /backend/         # Node.js server source code
-├── /mobile/        # React Native application source code
-├── /docs/          # Project documentation files
-├── .gitignore
-└── README.md
-
-
-
----
-
 ## Getting Started
 
 Follow these instructions to set up and run the project in a local development environment.
