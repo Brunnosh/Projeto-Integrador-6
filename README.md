@@ -120,11 +120,11 @@ Contributions from the project team are welcome. Please follow these guidelines:
 
 ## Authors
 
-Arthur José Silva Maluf
-Bruno Tasso Savoia
-Marcos do Amaral Miotto 
-Gustavo Kenji Mendonça Kaneko 
-Vitor Hugo Amaro Aristides 
+Arthur José Silva Maluf.
+Bruno Tasso Savoia.
+Marcos do Amaral Miotto. 
+Gustavo Kenji Mendonça Kaneko. 
+Vitor Hugo Amaro Aristides.
 
 ---
 
